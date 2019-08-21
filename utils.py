@@ -1,8 +1,9 @@
 import yaml
 import argparse
-from os.path import join, exists, isfile
-from os import makedirs, listdir
+from os.path import join, exists, isfile, isdir, basename, normpath
+from os import makedirs, listdir, rename
 import random, string
+from pathlib import Path
 
 
 # Hack for non-default
@@ -15,11 +16,16 @@ class NonDefaultVerifier(argparse.Action):
 # Import yaml
 def getConfiguration(configFile):
     with open(configFile, 'r') as stream:
-        try:
-            params = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
+        params = yaml.safe_load(stream)
     return params
+
+# Dump yaml
+def dumpConfiguration(configDict, direcotry, unfoldConfigWith=None):
+    if unfoldConfigWith:
+        configDict = selectParamsAccordingToFunctions(configDict, unfoldConfigWith) # Reverse functions to its arg names
+    t = join(direcotry, 'config.yaml')
+    with open(t, 'w') as f:
+        yaml.dump(configDict, f, default_flow_style=False)
 
 
 #  Dynamic boolean type for argument parser
@@ -39,30 +45,46 @@ def randomName(length):
    return ''.join(random.choice(letters) for i in range(length))
 
 
-def getWorkDir(jconfig, folderName, extraName='', createNew=True):
+def getWorkDir(jconfig, folderName, extraName='', createNew=True, completedText=''):
     if 'outputDir' in jconfig.keys():
         outputDir = jconfig['outputDir']
+        return makeDir(outputDir, folderName + extraName, createNew=createNew, completedText=completedText)
     else:
         return '.'  # todo Maybe /tmp ?
-    return makeDir(outputDir, folderName + extraName, createNew=createNew)
 
 
-def makeDir(outputDir, name, createNew=True):
+# fixme - this one is a bit ugly and can be improved
+def makeDir(outputDir, name, createNew=True, completedText=''):
     dir = join(outputDir, name)
-    if not exists(dir):
-        print('> Created Directory - "{}"'.format(dir))
-        makedirs(dir)
-    else:
+    dirCompleted = join(outputDir, name+completedText)
+    if exists(dir) or exists(dirCompleted):
         j = 1
-        while exists(dir):
+        while exists(dir) or exists(dirCompleted):
             j += 1
             dir = join(outputDir, '{}-{}'.format(name, j))
+            dirCompleted = join(outputDir, '{}-{}{}'.format(name, j, completedText))
+
         if createNew:
-            print('> Directory already exists, using - "{}"'.format(dir))
+            print('> Wanted directory already exists, created - "{}"'.format(dir))
             makedirs(dir)
         else:
+            dir = join(outputDir, '{}-{}'.format(name, j-1)) if j != 2 else name
             print('> Using already existent dir - "{}"'.format(dir))
+    else:
+        print('> Created Directory - "{}"'.format(dir))
+        makedirs(dir)
     return dir
+
+
+def changeDirName(origPath, nemName='', extraText=''):
+    if not isdir(origPath):
+        print('Error: Given Path is not a directory, name unchanged')
+        return
+    pathToFolder = Path(origPath).parent
+    oldFoderName = basename(normpath(origPath))
+    newFolderName = oldFoderName + extraText
+
+    rename(origPath, join(pathToFolder, newFolderName))
 
 
 def getFilesInDir(dir):
@@ -86,6 +108,15 @@ def selectFuncAccordingToParams(config, argList):
                     break
     return config
 
+
+def selectParamsAccordingToFunctions(config, argList):
+    for a in argList:
+        if 'possibilities' in a.keys() and len(a['possibilities']) is not 0:
+            for p in a['possibilities']:
+                if p[1] == config[a['name']]:
+                    config[a['name']] = p[0]
+                    break
+    return config
 
 def getTrialValuesFromConfig(trial, pconfig, argListPuppet):
     for arg in argListPuppet:

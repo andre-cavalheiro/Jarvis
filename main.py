@@ -8,7 +8,10 @@ from os.path import join
 import optuna
 from termcolor import colored
 
-# todo - output configurations to output dir
+# todo - deal with optimizer for command line
+# todo - transform several config files into one big one
+
+testrunTerminationString = ' - finished'
 
 # Verify command line arguments
 parser = argparse.ArgumentParser(description='[==< J A R V I S >==]')
@@ -46,7 +49,7 @@ printDict(jconfig, statement="> Using args:")
 
 if 'optimizer' in jconfig.keys() and jconfig['optimizer']['use']:
     # Create working directory here since it cannot be inside optimization function
-    getWorkDir(jconfig, 'optimization')
+    optimizationDir = getWorkDir(jconfig, 'optimization', completedText=testrunTerminationString)
 
     def optimizationObjective(trial):
         # fixme - Lots of unnecessary accessess to the file
@@ -56,11 +59,15 @@ if 'optimizer' in jconfig.keys() and jconfig['optimizer']['use']:
         pconfig = selectFuncAccordingToParams(pconfig, argListPuppet)
 
         # Get working directory name that was created in the beginning of the optimization procedure.
-        optimizationDir = getWorkDir(jconfig, 'optimization', createNew=False)
+        optimizationDir = getWorkDir(jconfig, 'optimization', createNew=False, completedText=testrunTerminationString)
         dir = makeDir(optimizationDir, pconfig['name'])
 
         puppet = Dummy(pconfig, debug=jconfig['debug'], outputDir=dir)
-        return puppet.pipeline()
+        reward = puppet.pipeline()
+        dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
+        changeDirName(dir, extraText=testrunTerminationString)
+
+        return reward
 
     pconfig = getConfiguration(jconfig['conf'])
     # Attribute random name to test run if one wasn't provided
@@ -75,6 +82,8 @@ if 'optimizer' in jconfig.keys() and jconfig['optimizer']['use']:
                        n_jobs=jconfig['optimizer']['numJobs'])  # Use catch param?
     except KeyboardInterrupt:
         pass
+
+    changeDirName(optimizationDir, extraText=testrunTerminationString)
 
 # Import puppet configuration and run single/sequential tests
 else:
@@ -103,7 +112,7 @@ else:
                     break
 
         # Create Directory for outputs
-        seqTestDir = getWorkDir(jconfig, 'sequencial-test')
+        seqTestDir = getWorkDir(jconfig, 'sequencial-test', completedText=testrunTerminationString)
 
         # Run instances
         for pconfig in pconfigs:
@@ -114,8 +123,11 @@ else:
 
             puppet = Dummy(pconfig, debug=jconfig['debug'], outputDir=dir)
             puppet.pipeline()
+            dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
+            changeDirName(dir, extraText=testrunTerminationString)
 
-            # fixme - change yaml when name of directory has do be changed, or pass config file to inside the dir?
+        changeDirName(seqTestDir, extraText=testrunTerminationString)
+
     else:
         # Single test:
 
@@ -134,10 +146,12 @@ else:
         printDict(pconfig, statement="> Using args:")
 
         # Create output directory for instance
-        dir = getWorkDir(jconfig, pconfig['name'])
+        dir = getWorkDir(jconfig, pconfig['name'], completedText=testrunTerminationString)
 
         # Run instance
         puppet = Dummy(args=pconfig, debug=jconfig['debug'], outputDir=dir)
         puppet.pipeline()
+        dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
+        changeDirName(dir, extraText=testrunTerminationString)
 
         # fixme - change directory name to add success ? -> Requires changing a few things above when creating it

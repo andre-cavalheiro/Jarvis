@@ -4,6 +4,6 @@ conf: src/config.yaml
 outputDir: output
 confDir: src/confs
 optimizer:
-  use: True     # Turns this mode on and off
+  use: False     # Turns this mode on and off
   numTrials: 1
   numJobs: 1

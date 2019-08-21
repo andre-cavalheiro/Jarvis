@@ -16,8 +16,8 @@ argListJarvis = [{
         'help': 'Whether in debug mode or not'
     },
     {
-        'name': 'optimize',
-        'type': str2bool,
+        'name': 'optimizer',
+        'type': str,
         'default': False,
         'required': False,
         'help': 'Whether in optimizer mode or not'
