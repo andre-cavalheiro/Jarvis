@@ -1,8 +1,8 @@
 debug: True
 seq: True
 conf: src/config.yaml
+confSeq: src/configSeq.yaml
 outputDir: output
-confDir: src/confs
 optimizer:
   use: False     # Turns this mode on and off
   numTrials: 1

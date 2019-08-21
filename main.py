@@ -9,7 +9,6 @@ import optuna
 from termcolor import colored
 
 # todo - deal with optimizer for command line
-# todo - transform several config files into one big one
 
 testrunTerminationString = ' - finished'
 
@@ -89,21 +88,22 @@ if 'optimizer' in jconfig.keys() and jconfig['optimizer']['use']:
 else:
     if jconfig['seq']:
         # Sequencial test:
-
-        if 'confDir' not in jconfig.keys():
-            print('> Missing configuration directory for sequential testing - exiting')
+        configs = getConfiguration(jconfig['confSeq'])['configs']
+        if 'confSeq' not in jconfig.keys():
+            print('> Missing configuration file for sequential testing - exiting')
             exit()
-        # Import configurations
-        conFiles = getFilesInDir(jconfig['confDir'])
-        pconfigs = []
-        for f in conFiles:
-            pconfig = getConfiguration(join(jconfig['confDir'], f))
-            pconfig = selectFuncAccordingToParams(pconfig, argListPuppet)
 
-            pconfigs.append(pconfig)
+        pconfigs = []
+
+        for conf in configs:
+            pconfig = selectFuncAccordingToParams(conf, argListPuppet)
+
             # Attribute random name to test run if one wasn't provided
             if 'name' not in pconfig.keys():
                 pconfig['name'] = randomName(7)
+
+            pconfigs.append(pconfig)
+
             for arg in argListPuppet:
                 if arg['name'] not in pconfig.keys() and arg['required']:
                     print('> Missing required argument "{}" in "{}" testrun'.format(arg['name'], pconfig['name']))
