@@ -1,7 +1,7 @@
 import argparse
 from sys import exit
 from utils import *
-from src.dummyClass import Dummy
+from src.puppet import Puppet
 from src.args import argListPuppet
 from jarvisArgs import argListJarvis
 from os.path import join
@@ -33,6 +33,7 @@ if clArgs['jc']:
     for key in argsPassedJarvis:
         jconfig[key] = clArgs[key]
 
+
 # If no config file then use only command line args
 else:
     # Check if all required arguments have been passed
@@ -46,13 +47,18 @@ else:
 
 printDict(jconfig, statement="> Using args:")
 
-if 'optimizer' in jconfig.keys() and jconfig['optimizer']['use']:
+if 'optimizer' in jconfig.keys() and 'optimize' in jconfig.keys() and jconfig['optimize']:
     # Create working directory here since it cannot be inside optimization function
     optimizationDir = getWorkDir(jconfig, 'optimization', completedText=testrunTerminationString)
 
     def optimizationObjective(trial):
         # fixme - Lots of unnecessary accessess to the file
         pconfig = getConfiguration(jconfig['conf'])
+        if 'name' not in pconfig.keys():
+            pconfig['name'] = randomName(7)
+        for arg in argListPuppet:
+            if arg['name'] not in pconfig.keys():
+                pconfig[arg['name']] = None
         pconfig = getTrialValuesFromConfig(trial, pconfig, argListPuppet)
         printDict(pconfig, "> Trial for: ")
         pconfig = selectFuncAccordingToParams(pconfig, argListPuppet)
@@ -61,20 +67,17 @@ if 'optimizer' in jconfig.keys() and jconfig['optimizer']['use']:
         optimizationDir = getWorkDir(jconfig, 'optimization', createNew=False, completedText=testrunTerminationString)
         dir = makeDir(optimizationDir, pconfig['name'])
 
-        puppet = Dummy(pconfig, debug=jconfig['debug'], outputDir=dir)
+        puppet = Puppet(pconfig, debug=jconfig['debug'], outputDir=dir)
         reward = puppet.pipeline()
         dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
         changeDirName(dir, extraText=testrunTerminationString)
 
         return reward
 
-    pconfig = getConfiguration(jconfig['conf'])
-    # Attribute random name to test run if one wasn't provided
-    if 'name' not in pconfig.keys():
-        pconfig['name'] = randomName(7)
-    print("==========        RUNNING OPTIMIZATION FOR - [{}]     ==========".format(pconfig['name']))
+    studyName = randomName(7)
+    print("==========        RUNNING OPTIMIZATION FOR - [{}]     ==========".format(studyName))
 
-    study = optuna.create_study(study_name=pconfig['name'], load_if_exists=True)
+    study = optuna.create_study(study_name=studyName, load_if_exists=True)
 
     try:
         study.optimize(optimizationObjective, n_trials=jconfig['optimizer']['numTrials'], \
@@ -121,7 +124,7 @@ else:
             # Create output directory for instance inside sequential-test directory
             dir = makeDir(seqTestDir, pconfig['name'])
 
-            puppet = Dummy(pconfig, debug=jconfig['debug'], outputDir=dir)
+            puppet = Puppet(pconfig, debug=jconfig['debug'], outputDir=dir)
             puppet.pipeline()
             dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
             changeDirName(dir, extraText=testrunTerminationString)
@@ -135,9 +138,17 @@ else:
         pconfig = getConfiguration(jconfig['conf'])
         pconfig = selectFuncAccordingToParams(pconfig, argListPuppet)
 
-        # Upgrade arguments if command line ones were passed
-        for key in argsPassedPuppet:
+        '''for key in argsPassedPuppet:
             pconfig[key] = clArgs[key]
+        '''
+        # Upgrade arguments if command line ones were passed and attribute None value to params which were not passed
+        # test me
+        for arg in argListPuppet:
+            if arg['name'] in argsPassedPuppet:
+                pconfig[arg['name']] = clArgs[arg['name']]
+            elif arg['name'] not in pconfig.keys():
+                pconfig[arg['name']] = None
+
         # Attribute random name to test run if one wasn't provided
         if 'name' not in pconfig.keys():
             pconfig['name'] = randomName(7)
@@ -149,7 +160,7 @@ else:
         dir = getWorkDir(jconfig, pconfig['name'], completedText=testrunTerminationString)
 
         # Run instance
-        puppet = Dummy(args=pconfig, debug=jconfig['debug'], outputDir=dir)
+        puppet = Puppet(args=pconfig, debug=jconfig['debug'], outputDir=dir)
         puppet.pipeline()
         dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
         changeDirName(dir, extraText=testrunTerminationString)

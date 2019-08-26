@@ -122,7 +122,7 @@ def getTrialValuesFromConfig(trial, pconfig, argListPuppet):
     for arg in argListPuppet:
         trialVal = getTrialValues(trial, arg)
         pconfig[arg['name']] = trialVal if trialVal is not None else pconfig[arg['name']]
-        if 'children' in arg.keys():
+        if 'children' in arg.keys() and pconfig[arg['name']] is not None:
             for childArg in arg['children']:
                 trialVal = getTrialValues(trial, childArg)
                 pconfig[arg['name']][childArg['name']] = trialVal if trialVal is not None \
@@ -132,23 +132,25 @@ def getTrialValuesFromConfig(trial, pconfig, argListPuppet):
 
 
 def getTrialValues(trial, arg):
-    if 'optimizeInt' in arg.keys():
-        return trial.suggest_int(arg['name'], arg['optimizeInt'][0], \
-                                                 arg['optimizeInt'][1])
+    if 'optimize' in arg.keys() and arg['optimize']:
+        if 'optimizeInt' in arg.keys():
+            return trial.suggest_int(arg['name'], arg['optimizeInt'][0], \
+                                                     arg['optimizeInt'][1])
 
-    elif 'optimizeUniform' in arg.keys():
-        return trial.suggest_uniform(arg['name'], arg['optimizeUniform'][0], \
-                                                     arg['optimizeUniform'][1])
+        elif 'optimizeUniform' in arg.keys():
+            return trial.suggest_uniform(arg['name'], arg['optimizeUniform'][0], \
+                                                         arg['optimizeUniform'][1])
 
-    elif 'optimizeLogUniform' in arg.keys():
-        return trial.suggest_loguniform(arg['name'], arg['optimizeLogUniform'][0], \
-                                                        arg['optimizeLogUniform'][1])
+        elif 'optimizeLogUniform' in arg.keys():
+            return trial.suggest_loguniform(arg['name'], arg['optimizeLogUniform'][0], \
+                                                            arg['optimizeLogUniform'][1])
 
-    elif 'optimizeDiscreteUniform' in arg.keys():
-        return trial.suggest_loguniform(arg['name'], *arg['optimizeDiscreteUniform'])
+        elif 'optimizeDiscreteUniform' in arg.keys():
+            return trial.suggest_loguniform(arg['name'], *arg['optimizeDiscreteUniform'])
 
-    elif 'optimizeCategorical' in arg.keys():
-        return trial.suggest_categorical(arg['name'], arg['optimizeCategorical'])
-
+        elif 'optimizeCategorical' in arg.keys():
+            return trial.suggest_categorical(arg['name'], arg['optimizeCategorical'])
+        else:
+            return None
     else:
         return None
