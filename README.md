@@ -3,9 +3,9 @@
 ## Introduction
 A tool to abstract ML projects making it easier to run them with different configurations and organize its outputs. 
 
-For Jarvis to work a Puppet class must be provided by the user which dones a certain task. An example of a puppet could be, training and testing a neural network while outputing the results and plots. Jarvis will process the user input and process before delivering it to the Puppet pipeline develpod by the user allowing the puppet to work in an abstract and cleaner way. Also for each runtime Jarvis will manage directory creation and attribution.
+For Jarvis to work a Puppet class must be provided by the user which does a certain task such as, for example, training and testing a neural network while outputing the results and plots. Jarvis will process the user input and process before delivering it to the Puppet pipeline developed by the user allowing the puppet to work in an abstract and cleaner way. Also for each runtime Jarvis will manage directory creation and attribution.
 
-The puppet class should be called **Puppet** and be inside **src/puppet.py** directory. (I'm planning to make this dynamic in a near future). It must also have a pipeline() method. The processed arguments are reseaved via args dictionary in the ```__init__()``` function. Its keys and values are defined by the user via configuration.
+The puppet class should be called **Puppet** and be inside **src/puppet.py** directory. (I'm planning to make this dynamic in a near future). It must also have a pipeline() method. The processed arguments are received via args dictionary in the ```__init__()``` function. Its keys and values are defined by the user via configuration.
 
 Both Jarvis and the puppet require two configuration files, one to define the structure of the argument (.py) and the other to pass the value itself (.yaml). This will allows the preprocessing of arguments before reaching the puppet's pipeline. For example:
 
@@ -79,12 +79,12 @@ Both Jarvis and the puppet require two configuration files, one to define the st
 ```
   
 
-The objective of this configuration method is to allow the simplification of running the puppet's pipeline in several different ways. Enabling the defenition of long test runs to be done in a simple config file instead of in the middle of the code. 
+The objective of this configuration method is to allow the simplification of running the puppet's pipeline in several different ways. Enabling the definition of long test runs to be done in a simple config file instead of in the middle of the code. 
 
-Jarvis has 3 distinct modes, them being: *Single execution*, *sequencial execution* and *optmization*. 
+Jarvis has 3 distinct modes, them being: *Single execution*, *sequential execution* and *optimization*. 
 
 - Single execution - the puppet's pipeline will run once with different arguments defined by the user.
-- Sequencial - the puppet's pipeline will run several times each time with different arguments defined by the user. 
+- Sequential - the puppet's pipeline will run several times each time with different arguments defined by the user. 
 - Optimization -the puppet's pipeline will run several times but this time the parameters will be selected by Optuna which performs [Baysian Optimization](https://www.cs.ox.ac.uk/people/nando.defreitas/publications/BayesOptLoop.pdf) in order to find the best combination of hyperparameters for the task at hand. The optimization parameters can only be defined in the configuration file.  
 
 Although i believe the most convenient way to use Jarvis is by using yaml configuration files i've also added the option of passing most of the parameters (both for Jarvis and the Puppet) through command line arguments which is explained in the section: "Single excution and command line arguments".
@@ -105,9 +105,9 @@ optimizer     # Optimizer configurations
   numTrials    
   numJobs
 ```
-The configurations can then be passed by command-line or by using a yaml configuration. (see Single excution and command line arguments)
+The configurations can then be passed by command-line or by using a yaml configuration. (see Single execution and command line arguments)
 
-The architecture for each of Jarvis' arguments is specied in the **argListJarvis** array exported in **jarvisArgs.py**. If you only want to use Jarvis and not change it's standard functionality you shouldn't need to change this, but feel welcome to improve it :) .
+The architecture for each of Jarvis' arguments is specified in the **argListJarvis** array exported in **jarvisArgs.py**. If you only want to use Jarvis and not change it's standard functionality you shouldn't need to change this, but feel welcome to improve it :) .
 
 
 ## Puppet Class
@@ -116,8 +116,8 @@ The puppet class is created by the user and should be called **Puppet** and be i
 
 ```
 name          # Configuration name
-debug         # Boolean indicating wheter we're in production or development
-outputDir     # Diretory in which to output whetever we want in an execution
+debug         # Boolean indicating whether we're in production or development
+outputDir     # Directory in which to output whatever we want in an execution
 args          # Dictionary containing whatever variables the user as defined as puppet arguments 
 ```
 
@@ -164,7 +164,7 @@ In the optimization variables, the array values define the search space in which
 
 
 
-## Single excution and command line arguments
+## Single execution and command line arguments
 
 This is the default mode, and it will only run the program with a single parameter configuration. An output directory is created inside the ```outputDir``` folder specified in the jarvis configuration. To enable this mode you just have to set the **seq** and **optimize** to False.
 
@@ -195,7 +195,7 @@ configs:
 
 Remember that you are the one that chooses which arguments are passed here via the Puppet's configuration. (See example in Puppet Class)
 
-Jarvis will create a new directory in the output called "sequencial - {ID}", and inside of it will create several directories for the outputs of each test run. 
+Jarvis will create a new directory in the output called "sequential - {ID}", and inside of it will create several directories for the outputs of each test run. 
 
 ## Optimization
 
@@ -211,3 +211,4 @@ You can configure the optimization process in Jarvis' configurations with:
 ```
 
 To better understand this you can look up [optuna's documentation](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html).
+
