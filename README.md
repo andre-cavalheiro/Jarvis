@@ -12,7 +12,13 @@ Both Jarvis and the puppet require two configuration files, one to define the st
 ```
   src/args.py
   
- 'name': 'classifier',
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+  
+ argListPuppet = [{
+        'name': 'classifier',
         'type': str,
         'default': None,
         'help': 'Classifier to be tested.',
@@ -21,29 +27,28 @@ Both Jarvis and the puppet require two configuration files, one to define the st
             ('KNN', KNeighborsClassifier),
             ('naiveBays', GaussianNB),
             ('decisionTree', DecisionTreeClassifier),
-            ('randomForest', RandomForestClassifier)
-        ]
-  ...
-        'name': 'classifierParams',
-        'type': str,              
-        'default': None,
-        'help': 'Possible parameters to be passed to the classifier.',
-        'required': False,
-        'children': [{
-            'name': 'n_neighbors',
-            'optimize': False,
-            'optimizeInt': [1, 10]
+            ('randomForest', RandomForestClassifier)]
         },
         {
-            'name': 'weights',
-        }]
+          'name': 'classifierParams',
+          'type': str,              
+          'default': None,
+          'help': 'Possible parameters to be passed to the classifier.',
+          'required': False,
+          'children': [{
+              'name': 'n_neighbors',
+              'optimize': False,
+              'optimizeInt': [1, 10]
+            },
+            {
+              'name': 'weights',
+            }]
+        }
+      ]
     
-```
-
 
 ```
   src/config.yaml
-  
   ...
   classifier: KNN
   classifierParams:
@@ -61,6 +66,7 @@ Both Jarvis and the puppet require two configuration files, one to define the st
       self.args = args
           self.debug = debug
           self.outputDir = outputDir
+          
           if 'classifierParams' in self.args.keys() and self.args['classifierParams'] is not None:
             self.clf = self.args['classifier'](**self.args['classifierParams'])
           else:
