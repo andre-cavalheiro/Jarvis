@@ -48,6 +48,7 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier
     
 
 ```
+```
   src/config.yaml
   ...
   classifier: KNN
