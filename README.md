@@ -132,8 +132,7 @@ For each execution a new directory output is created, using the variable ```name
 
 The class will receive as arguments processed by Jarvis as a dictionary via the ```args``` variable passed to the class.
 
-The user can define this params, and how to process them in the **argListPuppet** array which is exported in src/args.py (I'm planning to make this location dynamic in a near future). For each argument the following fields can be specified: You can see an example below every parameter you can use the make your configuration
-
+The user can define this params, and how to process them in the **argListPuppet** array which is exported in src/args.py (I'm planning to make this location dynamic in a near future). For each argument the following fields can be specified: You can see an example of a single argument called *classifier* below.
 ```
 from src.libs.treatment import standardize, normalize
 
@@ -216,6 +215,9 @@ You can configure the optimization process in Jarvis' configurations with:
   numTrials: 500
   numJobs: 1
 ```
+
+You define which parameters to optimize via the *optimize* variable of each argument in src/args.py, you can also specify what are the different options to optimize from via the *optimizeCategorical*, *optimizeDiscreteUniform*, *optimizeLogUniform*, *optimizeUniform*,
+*optimizeInt* variables in the same place. Notice that only one of this should be specified depending on how you want to optimize the variable. 
 
 To better understand this you can look up [optuna's documentation](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html).
 
