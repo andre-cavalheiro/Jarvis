@@ -1,9 +1,11 @@
-debug: True
-seq: True
+name: test run
 conf: src/config.yaml
 confSeq: src/configSeq.yaml
 outputDir: output
+debug: False
+seq: True         # Turns sequential mode on and off
+optimize: False     # Turns optimizer mode on and off
 optimizer:
-  use: False     # Turns this mode on and off
-  numTrials: 1
+  numTrials: 2
   numJobs: 1
+successString: ' - finished'

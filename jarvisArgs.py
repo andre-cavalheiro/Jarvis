@@ -1,4 +1,4 @@
-from utils import str2bool
+from utils import str2bool, randomName
 
 argListJarvis = [{
         'name': 'jc',
@@ -9,6 +9,14 @@ argListJarvis = [{
         'help': 'Jarvis configuration file (yaml).'
     },
     {
+        'name': 'name',
+        'type': str,
+        'default': randomName(7),
+        'required': False,
+        'help': 'Name of test run [default: random string with 7 characters].'
+
+    },
+    {
         'name': 'debug',
         'type': str2bool,
         'default': False,
@@ -16,18 +24,25 @@ argListJarvis = [{
         'help': 'Whether in debug mode or not'
     },
     {
-        'name': 'optimizer',
+        'name': 'conf',
         'type': str,
-        'default': False,
+        'default': 'src/config.yaml',
         'required': False,
-        'help': 'Whether in optimizer mode or not'
+        'help': 'Configuration file for puppet program. (default: src/config.yaml)'
     },
     {
-        'name': 'conf',
+        'name': 'confSeq',
+        'type': str,
+        'default': 'src/configSeq.yaml',
+        'required': False,
+        'help': 'Configuration file for puppet program in sequential mode. (default: src/configSeq.yaml)'
+    },
+    {
+        'name': 'outputDir',
         'type': str,
         'default': None,
         'required': False,
-        'help': 'Configuration file for child program.'
+        'help': 'Output Directory'
     },
     {
         'name': 'seq',
@@ -37,17 +52,25 @@ argListJarvis = [{
         'help': 'Indicate whether multiple or single test [default: False]'
     },
     {
-        'name': 'confDir',
+        'name': 'optimize',
         'type': str,
-        'default': None,
+        'default': False,
         'required': False,
-        'help': 'Directory in which configuration files are located for sequential testing.'
+        'help': 'Whether in optimizer mode or not'
     },
     {
-        'name': 'outputDir',
-        'type': str,
-        'default': None,
+        'name': 'optimizer',
+        'type': str,  # Actually an object
+        'default': False,
         'required': False,
-        'help': 'Output Directory'
-    }
+        'help': 'Whether in optimizer mode or not'
+    },
+    {
+        'name': 'successString',
+        'type': str,
+        'default': ' - finished',
+        'required': False,
+        'help': 'The text that will appear attached to the directories name whenever a testrun finishes sucessfully\
+                [default: " - finished"]'
+    },
 ]

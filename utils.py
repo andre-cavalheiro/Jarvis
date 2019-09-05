@@ -1,7 +1,7 @@
 import yaml
 import argparse
 from os.path import join, exists, isfile, isdir, basename, normpath
-from os import makedirs, listdir, rename
+from os import makedirs, listdir, rename, getcwd
 import random, string
 from pathlib import Path
 
@@ -45,12 +45,12 @@ def randomName(length):
    return ''.join(random.choice(letters) for i in range(length))
 
 
-def getWorkDir(jconfig, folderName, extraName='', createNew=True, completedText=''):
-    if 'outputDir' in jconfig.keys():
+def getWorkDir(jconfig, folderName, extraName='', completedText='', createNew=True):
+    if 'outputDir' in jconfig.keys() and jconfig['outputDir'] is not None:
         outputDir = jconfig['outputDir']
         return makeDir(outputDir, folderName + extraName, createNew=createNew, completedText=completedText)
     else:
-        return '.'  # todo Maybe /tmp ?
+        return getcwd()      # Current working directory
 
 
 # fixme - this one is a bit ugly and can be improved
@@ -68,7 +68,7 @@ def makeDir(outputDir, name, createNew=True, completedText=''):
             print('> Wanted directory already exists, created - "{}"'.format(dir))
             makedirs(dir)
         else:
-            dir = join(outputDir, '{}-{}'.format(name, j-1)) if j != 2 else name
+            dir = join(outputDir, '{}-{}'.format(name, j-1)) if j != 2 else join(outputDir, name)
             print('> Using already existent dir - "{}"'.format(dir))
     else:
         print('> Created Directory - "{}"'.format(dir))

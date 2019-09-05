@@ -8,10 +8,6 @@ from os.path import join
 import optuna
 from termcolor import colored
 
-# todo - deal with optimizer for command line
-
-testrunTerminationString = ' - finished'
-
 # Verify command line arguments
 parser = argparse.ArgumentParser(description='[==< J A R V I S >==]')
 for arg in argListJarvis:
@@ -32,8 +28,6 @@ if clArgs['jc']:
     # Upgrade values if command line ones were passed
     for key in argsPassedJarvis:
         jconfig[key] = clArgs[key]
-
-
 # If no config file then use only command line args
 else:
     # Check if all required arguments have been passed
@@ -45,91 +39,99 @@ else:
         else:
             jconfig[arg['name']] = clArgs[arg['name']]
 
-printDict(jconfig, statement="> Using args:")
+# Attribute random name to test run if one wasn't provided
+if 'name' not in jconfig.keys() or ('name' in jconfig.keys() and jconfig['name'] is None):
+    jconfig['name'] = randomName(7)
+
+printDict(jconfig, statement="> JARVIS using args:")
 
 if 'optimizer' in jconfig.keys() and 'optimize' in jconfig.keys() and jconfig['optimize']:
+
     # Create working directory here since it cannot be inside optimization function
-    optimizationDir = getWorkDir(jconfig, 'optimization', completedText=testrunTerminationString)
+    optimizationDir = getWorkDir(jconfig, 'optimization - {}'.format(jconfig['name']), completedText=jconfig['successString'])
 
     def optimizationObjective(trial):
-        # fixme - Lots of unnecessary accessess to the file
+        # fixme - Lots of unnecessary accesses to the file
+        print("=== NEW TRIAL ==  ")
+
         pconfig = getConfiguration(jconfig['conf'])
-        if 'name' not in pconfig.keys():
-            pconfig['name'] = randomName(7)
+
         for arg in argListPuppet:
             if arg['name'] not in pconfig.keys():
-                pconfig[arg['name']] = None
+                pconfig[arg['name']] = None         # todo This may be needed somewhere else
         pconfig = getTrialValuesFromConfig(trial, pconfig, argListPuppet)
         printDict(pconfig, "> Trial for: ")
         pconfig = selectFuncAccordingToParams(pconfig, argListPuppet)
 
         # Get working directory name that was created in the beginning of the optimization procedure.
-        optimizationDir = getWorkDir(jconfig, 'optimization', createNew=False, completedText=testrunTerminationString)
-        dir = makeDir(optimizationDir, pconfig['name'])
+        optimizationDir = getWorkDir(jconfig, 'optimization - {}'.format(jconfig['name']), createNew=False, completedText=jconfig['successString'])
+        dir = makeDir(optimizationDir, 'trial', completedText=jconfig['successString'])
 
         puppet = Puppet(pconfig, debug=jconfig['debug'], outputDir=dir)
         reward = puppet.pipeline()
         dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
-        changeDirName(dir, extraText=testrunTerminationString)
+        changeDirName(dir, extraText=jconfig['successString'])
 
         return reward
 
-    studyName = randomName(7)
-    print("==========        RUNNING OPTIMIZATION FOR - [{}]     ==========".format(studyName))
+    print("==========        RUNNING OPTIMIZATION FOR - [{}]     ==========".format(jconfig['name']))
 
-    study = optuna.create_study(study_name=studyName, load_if_exists=True)
+    study = optuna.create_study(study_name=jconfig['name'], load_if_exists=True)
 
     try:
         study.optimize(optimizationObjective, n_trials=jconfig['optimizer']['numTrials'], \
-                       n_jobs=jconfig['optimizer']['numJobs'])  # Use catch param?
+                       n_jobs=jconfig['optimizer']['numJobs'])
+        # Use catch param?
+        # Use storage='sqlite:///example.db'
     except KeyboardInterrupt:
         pass
 
-    changeDirName(optimizationDir, extraText=testrunTerminationString)
+    results = study.trials_dataframe()
+    results.to_csv(join(optimizationDir, 'optimizationTrials.csv'))
+
+    changeDirName(optimizationDir, extraText=jconfig['successString'])
 
 # Import puppet configuration and run single/sequential tests
 else:
     if jconfig['seq']:
-        # Sequencial test:
+        # Sequential test:
+        
         configs = getConfiguration(jconfig['confSeq'])['configs']
         if 'confSeq' not in jconfig.keys():
             print('> Missing configuration file for sequential testing - exiting')
             exit()
 
         pconfigs = []
-
-        for conf in configs:
+        
+        # Process each configuration process it and verify its validity
+        for it, conf in enumerate(configs):
             pconfig = selectFuncAccordingToParams(conf, argListPuppet)
-
-            # Attribute random name to test run if one wasn't provided
-            if 'name' not in pconfig.keys():
-                pconfig['name'] = randomName(7)
-
             pconfigs.append(pconfig)
 
             for arg in argListPuppet:
                 if arg['name'] not in pconfig.keys() and arg['required']:
-                    print('> Missing required argument "{}" in "{}" testrun'.format(arg['name'], pconfig['name']))
-                    print('> !!! Ignoring testrun - {} !!!'.format(pconfig['name']))
+                    print('> Missing required argument "{}" in testrun with index "{}" '.format(arg['name'], it))
+                    print('> !!! Ignoring testrun index - {} !!!'.format(it))
                     pconfigs.pop()
                     break
 
         # Create Directory for outputs
-        seqTestDir = getWorkDir(jconfig, 'sequencial-test', completedText=testrunTerminationString)
+        seqTestDir = getWorkDir(jconfig, 'sequential - {}'.format(jconfig['name']), completedText=jconfig['successString'])
 
+        print("==========        RUNNING TEST RUN - [{}]     ==========".format(jconfig['name']))
         # Run instances
         for pconfig in pconfigs:
-            print("==========        RUNNING TEST RUN - [{}]     ==========".format(pconfig['name']))
+            print("=== NEW INSTANCE ==  ")
             printDict(pconfig, statement="> Using args:")
             # Create output directory for instance inside sequential-test directory
-            dir = makeDir(seqTestDir, pconfig['name'])
+            dir = makeDir(seqTestDir, 'testrun', completedText=jconfig['successString'])
 
             puppet = Puppet(pconfig, debug=jconfig['debug'], outputDir=dir)
             puppet.pipeline()
             dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
-            changeDirName(dir, extraText=testrunTerminationString)
+            changeDirName(dir, extraText=jconfig['successString'])
 
-        changeDirName(seqTestDir, extraText=testrunTerminationString)
+        changeDirName(seqTestDir, extraText=jconfig['successString'])
 
     else:
         # Single test:
@@ -138,31 +140,21 @@ else:
         pconfig = getConfiguration(jconfig['conf'])
         pconfig = selectFuncAccordingToParams(pconfig, argListPuppet)
 
-        '''for key in argsPassedPuppet:
-            pconfig[key] = clArgs[key]
-        '''
         # Upgrade arguments if command line ones were passed and attribute None value to params which were not passed
-        # test me
         for arg in argListPuppet:
             if arg['name'] in argsPassedPuppet:
                 pconfig[arg['name']] = clArgs[arg['name']]
             elif arg['name'] not in pconfig.keys():
                 pconfig[arg['name']] = None
 
-        # Attribute random name to test run if one wasn't provided
-        if 'name' not in pconfig.keys():
-            pconfig['name'] = randomName(7)
-
-        print("==========        RUNNING TEST RUN - [{}]     ==========".format(pconfig['name']))
+        print("==========        RUNNING TEST RUN - [{}]     ==========".format(jconfig['name']))
         printDict(pconfig, statement="> Using args:")
 
         # Create output directory for instance
-        dir = getWorkDir(jconfig, pconfig['name'], completedText=testrunTerminationString)
+        dir = getWorkDir(jconfig, jconfig['name'], completedText=jconfig['successString'])
 
         # Run instance
         puppet = Puppet(args=pconfig, debug=jconfig['debug'], outputDir=dir)
         puppet.pipeline()
         dumpConfiguration(pconfig, dir, unfoldConfigWith=argListPuppet)
-        changeDirName(dir, extraText=testrunTerminationString)
-
-        # fixme - change directory name to add success ? -> Requires changing a few things above when creating it
+        changeDirName(dir, extraText=jconfig['successString'])
