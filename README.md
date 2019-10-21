@@ -12,7 +12,13 @@ Both Jarvis and the puppet require two configuration files, one to define the st
 ```
   src/args.py
   
- 'name': 'classifier',
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+  
+ argListPuppet = [{
+        'name': 'classifier',
         'type': str,
         'default': None,
         'help': 'Classifier to be tested.',
@@ -21,29 +27,29 @@ Both Jarvis and the puppet require two configuration files, one to define the st
             ('KNN', KNeighborsClassifier),
             ('naiveBays', GaussianNB),
             ('decisionTree', DecisionTreeClassifier),
-            ('randomForest', RandomForestClassifier)
-        ]
-  ...
-        'name': 'classifierParams',
-        'type': str,              
-        'default': None,
-        'help': 'Possible parameters to be passed to the classifier.',
-        'required': False,
-        'children': [{
-            'name': 'n_neighbors',
-            'optimize': False,
-            'optimizeInt': [1, 10]
+            ('randomForest', RandomForestClassifier)]
         },
         {
-            'name': 'weights',
-        }]
+          'name': 'classifierParams',
+          'type': str,              
+          'default': None,
+          'help': 'Possible parameters to be passed to the classifier.',
+          'required': False,
+          'children': [{
+              'name': 'n_neighbors',
+              'optimize': False,
+              'optimizeInt': [1, 10]
+            },
+            {
+              'name': 'weights',
+            }]
+        }
+      ]
     
+
 ```
-
-
 ```
   src/config.yaml
-  
   ...
   classifier: KNN
   classifierParams:
@@ -61,6 +67,7 @@ Both Jarvis and the puppet require two configuration files, one to define the st
       self.args = args
           self.debug = debug
           self.outputDir = outputDir
+          
           if 'classifierParams' in self.args.keys() and self.args['classifierParams'] is not None:
             self.clf = self.args['classifier'](**self.args['classifierParams'])
           else:
@@ -125,8 +132,7 @@ For each execution a new directory output is created, using the variable ```name
 
 The class will receive as arguments processed by Jarvis as a dictionary via the ```args``` variable passed to the class.
 
-The user can define this params, and how to process them in the **argListPuppet** array which is exported in src/args.py (I'm planning to make this location dynamic in a near future). For each argument the following fields can be specified: You can see an example below every parameter you can use the make your configuration
-
+The user can define this params, and how to process them in the **argListPuppet** array which is exported in src/args.py (I'm planning to make this location dynamic in a near future). For each argument the following fields can be specified: You can see an example of a single argument called *classifier* below.
 ```
 from src.libs.treatment import standardize, normalize
 
@@ -209,6 +215,9 @@ You can configure the optimization process in Jarvis' configurations with:
   numTrials: 500
   numJobs: 1
 ```
+
+You define which parameters to optimize via the *optimize* variable of each argument in src/args.py, you can also specify what are the different options to optimize from via the *optimizeCategorical*, *optimizeDiscreteUniform*, *optimizeLogUniform*, *optimizeUniform*,
+*optimizeInt* variables in the same place. Notice that only one of this should be specified depending on how you want to optimize the variable. 
 
 To better understand this you can look up [optuna's documentation](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html).
 
