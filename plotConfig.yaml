@@ -1,0 +1,24 @@
+seqLogConversion: 'yaml,json-Csv'
+x: ['', '']
+ys: [[''], ['']]
+dpi: 500
+logFile: output.csv
+
+plotSingleParams:
+  type: ['line']
+  level: 'localCSV'
+  yAxes: ['', '']
+
+plotSeqParams:
+  type: ['lineHigher']
+  level: ''
+  yAxes: ['', '']
+
+
+plotOnlyParams:
+  dir: ''
+  type: ['lineHigher']
+  level: 'fetchCSV'
+  yLabels: ['', ''] # fixme - careful with the order of directories
+  pallets: True
+
